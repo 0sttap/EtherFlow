@@ -4,3 +4,6 @@
 [submodule "contract/lib/openzeppelin-contracts"]
 	path = contract/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "contract/lib/silo-foundry-utils"]
+	path = contract/lib/silo-foundry-utils
+	url = https://github.com/silo-finance/silo-foundry-utils
