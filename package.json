@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "axios": "^1.7.7"
+  },
+  "scripts": {
+    "build-contract": "cd contract && forge build && cd ..",
+    "test-contract": "cd contract && forge test && cd ..",
+    "deploy": "cd contract && forge script deploy/Flow.s.sol --ffi --broadcast && cd .."
+  }
+}

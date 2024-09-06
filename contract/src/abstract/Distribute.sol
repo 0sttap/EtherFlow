@@ -7,39 +7,13 @@ import {IFlow} from "../interfaces/IFlow.sol";
 abstract contract Distribute is IFlow {
     uint256 public constant PERCENTAGE_SCALE_FACTOR = 100;
 
-    function distibuteETH(address[] calldata _receivers, uint256[] calldata _amounts) external payable {
-        _distributeETH(_receivers, _amounts, DistributionType.AMOUNTS);
-    }
-
-    function distributeETHWithPercentages(address[] calldata _receivers, uint256[] calldata _percentages) external payable {
-        _distributeETH(_receivers, _percentages, DistributionType.PERCENTAGES);
-    }
-
-    function distributeERC20(
-        IERC20 _token,
-        uint256 _amountToDistribute,
-        address[] calldata _receivers,
-        uint256[] calldata _amounts
-    ) external {
-        _distributeERC20(_token, _amountToDistribute, _receivers, _amounts, DistributionType.AMOUNTS);
-    }
-
-    function distributeERC20WithPercentages(
-        IERC20 _token,
-        uint256 _amountToDistribute,
-        address[] calldata _receivers,
-        uint256[] calldata _percentages
-    ) external {
-        _distributeERC20(_token, _amountToDistribute, _receivers, _percentages, DistributionType.PERCENTAGES);
-    }
-
-    function _distributeETH(address[] calldata _receivers, uint256[] calldata _shares, DistributionType _type) internal {
+    function distributeETH(address[] calldata _receivers, uint256[] calldata _shares, bool _fixedAmount) external payable {
         uint256 receiversLength = _receivers.length;
         
-        _validateDistribute(msg.value, receiversLength, _shares, _type);
+        _validateDistribute(msg.value, receiversLength, _shares, _fixedAmount);
 
         for (uint256 i; i < receiversLength; i++) {
-            uint256 amount = _type == DistributionType.AMOUNTS
+            uint256 amount = _fixedAmount
                 ? _shares[i]
                 : (msg.value * _shares[i]) / PERCENTAGE_SCALE_FACTOR;
 
@@ -49,23 +23,23 @@ abstract contract Distribute is IFlow {
         }
     }
     
-    function _distributeERC20(
-        IERC20 _token,
+    function distributeERC20(
+        address _token,
         uint256 _amountToDistribute,
         address[] calldata _receivers,
         uint256[] calldata _shares,
-        DistributionType _type
-    ) internal {
+        bool _fixedAmount
+    ) external {
         uint256 receiversLength = _receivers.length;
 
-        _validateDistribute(_amountToDistribute, receiversLength, _shares, _type);
+        _validateDistribute(_amountToDistribute, receiversLength, _shares, _fixedAmount);
 
         for (uint256 i; i < receiversLength; i++) {
-            uint256 amount = _type == DistributionType.AMOUNTS
+            uint256 amount = _fixedAmount
                 ? _shares[i]
                 : (_amountToDistribute * _shares[i]) / PERCENTAGE_SCALE_FACTOR;
 
-            _token.transferFrom(msg.sender, _receivers[i], amount);
+            IERC20(_token).transfer(_receivers[i], amount);
         }
     }
 
@@ -73,7 +47,7 @@ abstract contract Distribute is IFlow {
         uint256 _amountToDistribute,
         uint256 _receiversLength,
         uint256[] calldata _shares,
-        DistributionType _type
+        bool _fixedAmount
     ) internal pure {
         uint256 sharesLength = _shares.length;
 
@@ -84,7 +58,7 @@ abstract contract Distribute is IFlow {
             unchecked { totalShares += _shares[i]; }
         }
 
-        bool correctShares = _type == DistributionType.AMOUNTS ? totalShares == _amountToDistribute : totalShares == 100;
+        bool correctShares = _fixedAmount ? totalShares == _amountToDistribute : totalShares == 100;
 
         if (!correctShares) revert InvalidInputShares();
     }

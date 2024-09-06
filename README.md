@@ -32,15 +32,71 @@ The following will need to be installed in order to use this. Please follow the 
 ```shell
 git clone https://github.com/0sttap/EtherFlow.git
 cd EtherFlow
+npm install
 ```
 
 #### 2. Deploy contract
+* You can skip this part, for test contract already deployed, but run `npm run build-contract` instead
 
-Copy `.env.example` to `.env`, fill out required values and run:
- - You can use exist private key and rpc url
+Copy `contract/.env.example` to `contract/.env`, fill out required values and run:
+ - For test you can use exist private key and rpc url
 
 ```shell
-cd contract && forge script deploy/Flow.s.sol --ffi --broadcast && cd ../
+npm run deploy
+```
+
+After deploy you see in terminal logs like that:
+
+```
+##### mainnet
+✅  [Success]Hash: 0x2f6679b1ff1dcbb8c23441610dfc75ea93b7aaa59d7fa283580af53e75730ea4
+Contract Address: 0x29e95B6bbCd23fbF66e9d8ee2029564A734560De
+Block: 20670268
+Paid: 0.00257579449014608 ETH (637744 gas * 4.03891607 gwei)
+
+✅ Sequence #1 on mainnet | Total Paid: 0.00257579449014608 ETH (637744 gas * avg 4.03891607 gwei)
+```
+
+You should copy `Contract Address` and add to main .env file:
+```
+CONTRACT_ADDRESS=0x29e95B6bbCd23fbF66e9d8ee2029564A734560De
 ```
 
 #### 3. Run script
+
+Copy `.env.example` to `.env`, fill out required values and run:
+ - For test you can use exist private keys, rpc url and contract address (*only if you don't deploy new contract)
+
+To start the script, use:
+
+```shell
+cargo run --release
+```
+
+#### 4. Test API
+
+In folder test you have two files `collect.js` and `disperse.js`
+
+You can use exist data for test api, just run:
+
+```shell
+node test/collect.js 1
+```
+or
+
+```shell
+node test/disperse.js 1
+```
+
+The number is:
+* 1 - disperse/collect eth by fixed amount
+* 2 - disperse/collect eth by percentage amount
+* 3 - disperse/collect erc20 by fixed amount
+* 4 - disperse/collect erc20 by percentage amount
+
+After run a script, you see a response like that:
+```
+{
+  transactionHash: '0xd886539abde60b3e00363bc48219bef0d409fb6c266d57b3c5db66a4e958b990'
+}
+```

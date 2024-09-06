@@ -1,8 +1,33 @@
 [package]
-name = "EtherFlow"
+name = "ether_flow"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# env, log
+fern = { version = "0.6", features = ["colored"] }
+log = "0.4.20"
+dotenv = "0.15.0"
+
+# serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# http routing
+warp = "0.3"
+tokio = { version = "1", features = ["full"] }
+
+# utils
+chrono = { version = "0.4", features = ["serde"] }
+eyre = "0.6.11"
+futures = "0.3.5"
+
+# evm
+bytes = "1"
+ethers = { version = "2.0", features = ["ethers-solc"] }
+hashbrown = { version = "0.14.3", features = ["serde"] }
+
+sha3 = "0.10.8"
+anyhow = "1.0.79"

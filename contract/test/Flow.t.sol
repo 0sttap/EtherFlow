@@ -25,23 +25,23 @@ contract FlowTest is Test {
 
         deal(address(token), address(this), _amountToDistribute);
 
-        token.approve(address(flow), _amountToDistribute);
+        token.transfer(address(flow), _amountToDistribute);
     }
 
     function test_lengthMismatchRevert() public {
         _receivers.pop();
 
         vm.expectRevert(IFlow.LengthMismatch.selector);
-        flow.distibuteETH{value: _amountToDistribute}(_receivers, _amounts);
+        flow.distributeETH{value: _amountToDistribute}(_receivers, _amounts, true);
 
         vm.expectRevert(IFlow.LengthMismatch.selector);
-        flow.distributeETHWithPercentages{value: _amountToDistribute}(_receivers, _percentages);
+        flow.distributeETH{value: _amountToDistribute}(_receivers, _percentages, false);
 
         vm.expectRevert(IFlow.LengthMismatch.selector);
-        flow.distributeERC20(IERC20(address(token)), _amountToDistribute, _receivers, _amounts);
+        flow.distributeERC20(address(token), _amountToDistribute, _receivers, _amounts, true);
 
         vm.expectRevert(IFlow.LengthMismatch.selector);
-        flow.distributeERC20WithPercentages(IERC20(address(token)), _amountToDistribute, _receivers, _percentages);
+        flow.distributeERC20(address(token), _amountToDistribute, _receivers, _percentages, false);
     }
 
     function test_invalidInputSharesRevert() public {
@@ -49,20 +49,20 @@ contract FlowTest is Test {
         _percentages[0] = 0;
 
         vm.expectRevert(IFlow.InvalidInputShares.selector);
-        flow.distibuteETH{value: _amountToDistribute}(_receivers, _amounts);
+        flow.distributeETH{value: _amountToDistribute}(_receivers, _amounts, true);
 
         vm.expectRevert(IFlow.InvalidInputShares.selector);
-        flow.distributeETHWithPercentages{value: _amountToDistribute}(_receivers, _percentages);
+        flow.distributeETH{value: _amountToDistribute}(_receivers, _percentages, false);
 
         vm.expectRevert(IFlow.InvalidInputShares.selector);
-        flow.distributeERC20(IERC20(address(token)), _amountToDistribute, _receivers, _amounts);
+        flow.distributeERC20(address(token), _amountToDistribute, _receivers, _amounts, true);
 
         vm.expectRevert(IFlow.InvalidInputShares.selector);
-        flow.distributeERC20WithPercentages(IERC20(address(token)), _amountToDistribute, _receivers, _percentages);
+        flow.distributeERC20(address(token), _amountToDistribute, _receivers, _percentages, false);
     }
 
     function test_distributeAndWithdrawETH() public {
-        flow.distibuteETH{value: _amountToDistribute}(_receivers, _amounts);
+        flow.distributeETH{value: _amountToDistribute}(_receivers, _amounts, true);
 
         for (uint256 i; i < _receivers.length; i++) {
             assertEq(address(_receivers[i]).balance, _amounts[i]);
@@ -71,7 +71,7 @@ contract FlowTest is Test {
             payable(address(flow)).transfer(_amounts[i]);
         }
 
-        flow.withdrawETH(collector, _amountToDistribute);
+        flow.withdrawETH(collector, _amountToDistribute, true);
 
         assertEq(address(collector).balance, _amountToDistribute);
 
@@ -82,7 +82,7 @@ contract FlowTest is Test {
     }
 
     function test_distributeAndWithdrawETHWithPercentages() public {
-        flow.distributeETHWithPercentages{value: _amountToDistribute}(_receivers, _percentages);
+        flow.distributeETH{value: _amountToDistribute}(_receivers, _percentages, false);
 
         for (uint256 i; i < _receivers.length; i++) {
             uint256 expectBalance = _amountToDistribute * _percentages[i] / 100;
@@ -93,19 +93,21 @@ contract FlowTest is Test {
             payable(address(flow)).transfer(expectBalance);
         }
 
-        flow.withdrawETHWithPercentage(collector, 65);
+        uint256 collectorBalance = address(collector).balance;
 
-        assertEq(address(collector).balance, _amountToDistribute * 65 / 100);
+        flow.withdrawETH(collector, 65, false);
+
+        assertEq(address(collector).balance, collectorBalance + _amountToDistribute * 65 / 100);
         assertEq(address(flow).balance, _amountToDistribute * 35 / 100);
 
-        flow.withdrawETHWithPercentage(collector, 100);
+        flow.withdrawETH(collector, 100, false);
 
-        assertEq(address(collector).balance, _amountToDistribute);
+        assertEq(address(collector).balance, collectorBalance + _amountToDistribute);
         assertEq(address(flow).balance, 0);
     }
 
     function test_distributeAndWithdrawERC20() public {
-        flow.distributeERC20(IERC20(address(token)), _amountToDistribute, _receivers, _amounts);
+        flow.distributeERC20(address(token), _amountToDistribute, _receivers, _amounts, true);
 
         for (uint256 i; i < _receivers.length; i++) {
             assertEq(token.balanceOf(address(_receivers[i])), _amounts[i]);
@@ -114,7 +116,7 @@ contract FlowTest is Test {
             token.transfer(address(flow), _amounts[i]);
         }
 
-        flow.withdrawERC20(IERC20(address(token)), collector, _amountToDistribute);
+        flow.withdrawERC20(address(token), collector, _amountToDistribute, true);
 
         assertEq(token.balanceOf(address(collector)), _amountToDistribute);
 
@@ -124,7 +126,7 @@ contract FlowTest is Test {
     }
 
     function test_distributeERC20WithPercentages() public {
-        flow.distributeERC20WithPercentages(IERC20(address(token)), _amountToDistribute, _receivers, _percentages);
+        flow.distributeERC20(address(token), _amountToDistribute, _receivers, _percentages, false);
 
         for (uint256 i; i < _receivers.length; i++) {
             uint256 expectBalance = _amountToDistribute * _percentages[i] / 100;
@@ -135,14 +137,16 @@ contract FlowTest is Test {
             token.transfer(address(flow), expectBalance);
         }
 
-        flow.withdrawERC20WithPercentage(IERC20(address(token)), collector, 53);
+        uint256 collectorBalance = token.balanceOf(address(collector));
 
-        assertEq(token.balanceOf(address(collector)), _amountToDistribute * 53 / 100);
+        flow.withdrawERC20(address(token), collector, 53, false);
+
+        assertEq(token.balanceOf(address(collector)), collectorBalance + _amountToDistribute * 53 / 100);
         assertEq(token.balanceOf(address(flow)), _amountToDistribute * 47 / 100);
 
-        flow.withdrawERC20WithPercentage(IERC20(address(token)), collector, 100);
+        flow.withdrawERC20(address(token), collector, 100, false);
 
-        assertEq(token.balanceOf(address(collector)), _amountToDistribute);
+        assertEq(token.balanceOf(address(collector)), collectorBalance + _amountToDistribute);
         assertEq(token.balanceOf(address(flow)), 0);
     }
 }
